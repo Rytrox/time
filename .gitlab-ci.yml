@@ -6,24 +6,116 @@
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ci/variables/#cicd-variable-precedence
 stages:
-- build
-- test
-- deploy
-- review
-- dast
-- staging
-- canary
-- production
-- incremental rollout 10%
-- incremental rollout 25%
-- incremental rollout 50%
-- incremental rollout 100%
-- performance
-- cleanup
-- secret-detection
+  - prepare
+  - secret-detection
+  - test
+  - build
+  - release
+
 variables:
   SECRET_DETECTION_ENABLED: 'true'
 secret_detection:
   stage: secret-detection
 include:
-- template: Auto-DevOps.gitlab-ci.yml
+- template: Security/Secret-Detection.gitlab-ci.yml
+
+
+# Install Packages and cache them into Runner
+Install Packages:
+  stage: prepare
+  image: node:current-alpine
+  cache: &cache
+    key: ${CI_PROJECT_PATH_SLUG}-${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules
+    policy: pull-push
+  script:
+    - npm i
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+    - if: $CI_COMMIT_TAG
+      when: on_success
+
+.load-node-modules:
+  needs:
+    - job: Install Packages
+      artifacts: false
+  cache:
+    <<: *cache
+    policy: pull
+
+Lint:
+  stage: test
+  image: node:current-alpine
+  extends: .load-node-modules
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+    - when: never
+  script:
+    - npm run lint
+
+Test Compilation:
+  stage: test
+  image: node:current-alpine
+  extends: .load-node-modules
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+    - when: never
+  script:
+    - npm run build
+
+Test (jest):
+  stage: test
+  image: node:current-alpine
+  extends: .load-node-modules
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+    - when: never
+  script:
+    - npm run test
+  coverage: '/All files\s*\|\s*([\d\.]+)/'
+  artifacts:
+    reports:
+      coverage_report:
+        path: coverage/cobertura-coverage.xml
+        coverage_format: cobertura
+
+Build:
+  stage: build
+  image: node:current-alpine
+  extends: .load-node-modules
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: on_success
+    - when: never
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist
+    expire_in: 1 day
+
+Publish:
+  cache: *cache
+  image: node:current-alpine
+  needs:
+    - Build
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: on_success
+    - when: never
+  before_script:
+    - echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> ~/.npmrc
+  script:
+    - cd dist
+    - npm publish --access public
