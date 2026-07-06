@@ -118,6 +118,8 @@ Publish to npmjs:
   before_script:
     - echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> ~/.npmrc
     - cp package.json dist
+    - cp LICENSE.md dist
+    - cp README.md dist
   script:
     - cd dist
     - npm publish --access public
