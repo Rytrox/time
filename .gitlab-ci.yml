@@ -10,7 +10,7 @@ stages:
   - secret-detection
   - test
   - build
-  - release
+  - publish
 
 variables:
   SECRET_DETECTION_ENABLED: 'true'
@@ -105,7 +105,8 @@ Build:
       - dist
     expire_in: 1 day
 
-Publish:
+Publish to npmjs:
+  stage: publish
   cache: *cache
   image: node:current-alpine
   needs:
