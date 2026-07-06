@@ -116,11 +116,10 @@ Publish to npmjs:
       when: on_success
     - when: never
   before_script:
-    - echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> .npmrc
-    - echo $NPM_AUTH_TOKEN
     - cp package.json dist
     - cp LICENSE.md dist
     - cp README.md dist
   script:
     - cd dist
+    - echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> .npmrc
     - npm publish --access public
