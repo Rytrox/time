@@ -214,4 +214,4 @@ const schema = yup.object({
 | `YearMonth#toLocaleString(locale?, options?)`                                         | Convert to locale string             |
 
 License
-ISC — © Timo Taubmann
+ISC — © The Rytrox Group

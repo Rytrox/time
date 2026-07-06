@@ -2,13 +2,18 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "composite": true,
+    "noEmit": true,
     "types": [
       "jest"
     ]
   },
   "include": [
-    "src/**/*.ts",
     "src/**/*.spec.ts"
   ],
-  "exclude": []
+  "exclude": [],
+  "references": [
+    {
+      "path": "./tsconfig.json"
+    }
+  ]
 }
