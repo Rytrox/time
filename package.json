@@ -6,6 +6,15 @@
     "type": "git",
     "url": "git@git.juniorjob.de:shared/date-utils.git"
   },
+  "keywords": [
+    "typescript",
+    "date",
+    "time",
+    "localdate",
+    "localtime",
+    "utility",
+    "library"
+  ],
   "license": "ISC",
   "author": "Timo Taubmann <timeout@rytrox.de>",
   "type": "module",
