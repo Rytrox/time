@@ -117,6 +117,7 @@ Publish to npmjs:
     - when: never
   before_script:
     - echo "//registry.npmjs.org/:_authToken=$NPM_AUTH_TOKEN" >> ~/.npmrc
+    - cp package.json dist
   script:
     - cd dist
     - npm publish --access public
