@@ -13,7 +13,7 @@ describe('YearMonth', () => {
     });
 
     it ('should create YearMonth from valid ISO-Date string', () => {
-        const yearMonth = YearMonth.parse('2023-01');
+        const yearMonth = new YearMonth('2023-01');
         expect(yearMonth).toBeDefined();
         expect(yearMonth.getFullYear()).toBe(2023);
         expect(yearMonth.getMonth()).toBe(Month.JANUARY);
@@ -23,23 +23,19 @@ describe('YearMonth', () => {
     });
 
     it ('should create YearMonth from valid ISO-Date string with leading zeros', () => {
-        const yearMonth = YearMonth.parse('2023-01-01');
+        const yearMonth = new YearMonth('2023-01-01');
         expect(yearMonth).toBeDefined();
         expect(yearMonth.getFullYear()).toBe(2023);
         expect(yearMonth.getMonth()).toBe(Month.JANUARY);
         expect(yearMonth.valid).toBe(true);
-
-        expect(yearMonth).toEqual(new YearMonth('2023-01-01'));
     });
 
     it ('should create YearMonth from valid ISO-Date string with leading zeros and time', () => {
-        const yearMonth = YearMonth.parse('2023-01-01T12:00:00');
+        const yearMonth = new YearMonth('2023-01-01T12:00:00');
         expect(yearMonth).toBeDefined();
         expect(yearMonth.getFullYear()).toBe(2023);
         expect(yearMonth.getMonth()).toBe(Month.JANUARY);
         expect(yearMonth.valid).toBe(true);
-
-        expect(yearMonth).toEqual(new YearMonth('2023-01-01T12:00:00'));
     });
 
     it ('should create YearMonth now', () => {
@@ -53,7 +49,7 @@ describe('YearMonth', () => {
     });
 
     it ('should create YearMonth from params', () => {
-        const yearMonth = YearMonth.of(2023, Month.JANUARY);
+        const yearMonth = new YearMonth(2023, Month.JANUARY);
         expect(yearMonth).toBeDefined();
         expect(yearMonth.getFullYear()).toBe(2023);
         expect(yearMonth.getMonth()).toBe(Month.JANUARY);
@@ -82,6 +78,28 @@ describe('YearMonth', () => {
         const yearMonth = new YearMonth(NaN);
         expect(yearMonth).toBeDefined();
         expect(yearMonth.valid).toBe(false);
+    });
+
+    it ('should parse valid ISO-Date string', () => {
+        const yearMonth = YearMonth.parse('2023-01');
+        expect(yearMonth).toBeDefined();
+        expect(yearMonth.getFullYear()).toBe(2023);
+        expect(yearMonth.getMonth()).toBe(Month.JANUARY);
+        expect(yearMonth.valid).toBe(true);
+    });
+
+    it ('should throw error if invalid ISO-Date string is provided', () => {
+        expect(() => YearMonth.parse('2023-13')).toThrow();
+    });
+
+    it ('should create and validate YearMonth', () => {
+        const yearMonth = YearMonth.of(2023, Month.JANUARY);
+        expect(yearMonth).toBeDefined();
+        expect(yearMonth.valid).toBe(true);
+    });
+
+    it ('should throw error if invalid YearMonth params is provided', () => {
+        expect(() => YearMonth.of(2023, 13 as Month)).toThrow();
     });
 
     it ('should be before a valid YearMonth', () => {

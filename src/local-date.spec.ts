@@ -4,6 +4,10 @@ import { LocalTime } from './local-time';
 import { Month } from './month';
 
 describe('LocalDate', () => {
+    /**
+     * CONSTRUCTOR
+     */
+
     it ('should create an instance of today', () => {
         const today = new LocalDate();
         expect(today).toBeTruthy();
@@ -71,6 +75,12 @@ describe('LocalDate', () => {
         expect(date.getFullYear()).toBe(2023);
         expect(date.getMonth()).toBe(Month.NOVEMBER);
         expect(date.getDate()).toBe(25);
+
+        const date2 = new LocalDate('2023-11-25T12:00:00Z');
+        expect(date2.valid).toBe(true);
+        expect(date2.getFullYear()).toBe(2023);
+        expect(date2.getMonth()).toBe(Month.NOVEMBER);
+        expect(date2.getDate()).toBe(25);
     });
 
     it ('should create a copy', () => {
@@ -82,6 +92,61 @@ describe('LocalDate', () => {
         expect(copy.getFullYear()).toBe(2023);
         expect(copy.getMonth()).toBe(Month.NOVEMBER);
         expect(copy.getDate()).toBe(25);
+    });
+
+    it ('should create invalid instance by ISO-8601', () => {
+        const date = new LocalDate('2023-13-25');
+        expect(date.valid).toBe(false);
+    });
+
+    /**
+     * PARSE
+     */
+
+    it ('should parse an iso-8601 string', () => {
+        const date = LocalDate.parse('2023-11-25');
+        expect(date.valid).toBe(true);
+        expect(date.getFullYear()).toBe(2023);
+        expect(date.getMonth()).toBe(Month.NOVEMBER);
+        expect(date.getDate()).toBe(25);
+    });
+
+    it ('should throw an error while parsing with ISO-8601', () => {
+        expect(() => LocalDate.parse('2023-13-25')).toThrow();
+        expect(() => LocalDate.parse('1.085-11-31')).toThrow();
+        expect(() => LocalDate.parse('1.085-13-31')).toThrow();
+    });
+
+    /**
+     * OF
+     */
+
+    it ('should return a valid LocalDate', () => {
+        const date = LocalDate.of(2023, Month.NOVEMBER, 25);
+        expect(date.valid).toBe(true);
+
+        expect(date.getFullYear()).toBe(2023);
+        expect(date.getMonth()).toBe(Month.NOVEMBER);
+        expect(date.getDate()).toBe(25);
+    });
+
+    /**
+     * NOW
+     */
+
+    it ('should return a valid LocalDate', () => {
+        const date = LocalDate.now();
+        expect(date.valid).toBe(true);
+
+        expect(date.getFullYear()).toBe(new Date().getFullYear());
+        expect(date.getMonth()).toBe(new Date().getMonth());
+        expect(date.getDate()).toBe(new Date().getDate());
+    });
+
+    it ('should throw an error while parsing invalid dates', () => {
+        expect(() => LocalDate.of(1.085, Month.NOVEMBER, 31)).toThrow();
+        expect(() => LocalDate.of(2024, 16 as Month, 31)).toThrow();
+        expect(() => LocalDate.of(2023, Month.JANUARY, 42)).toThrow();
     });
 
     it ('should return false on comparison with invalid Dates', () => {

@@ -1,7 +1,6 @@
 import { Month, isMonth } from './month';
 import { DayOfWeek } from './day';
 import { LocalTime } from './local-time';
-import { isDate } from 'lodash';
 
 /**
  * ISO-String type of local date without a time component.
@@ -10,8 +9,14 @@ export type LocalDateString = `${number}-${0 | 1}${number}-${0 | 1 | 2 | 3}${num
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/u;
 
+const isPossibleYear = (val: unknown): val is number => typeof val === 'number' && Number.isInteger(val) && val >= 1;
+const isPossibleMonth = (val: unknown): val is number => typeof val === 'number' && Number.isInteger(val) && val >= 0 && val <= 12;
+const isPossibleDay = (val: unknown): val is number => typeof val === 'number' && Number.isInteger(val) && val >= 1 && val <= 31;
+
 /**
  * Checks whether the given value is a valid date string according to ISO-8601 without a time component.
+ *
+ * ATTENTION: This function does not validate the date itself, only the format.
  *
  * @param val the value to check
  */
@@ -19,12 +24,30 @@ export const isLocalDateString = (val: unknown): val is LocalDateString => {
     if (typeof val === 'string' && dateRegex.test(val)) {
         const [year, month, day] = val.split('-').map(Number);
 
-        if (typeof year === 'number' && isMonth(month) && typeof day === 'number') {
+        if (isPossibleYear(year) && isPossibleMonth(month) && isPossibleDay(day)) {
             return new Date(Date.UTC(year, month - 1, day)).toISOString().split('T')[0] === val;
         }
     }
 
     return false;
+};
+
+const validateLocalDate = (date: LocalDate, year: number, month: Month, day: number) => {
+    if (!date.valid) {
+        throw new Error('Could not parse date, invalid date');
+    }
+
+    if (date.getFullYear() !== year) {
+        throw new Error('Could not parse date, year mismatch');
+    }
+
+    if (date.getMonth() !== month) {
+        throw new Error('Could not parse date, month mismatch');
+    }
+
+    if (date.getDate() !== day) {
+        throw new Error('Could not parse date, day of month mismatch');
+    }
 };
 
 interface DateFormatOptions {
@@ -37,7 +60,7 @@ interface DateFormatOptions {
     formatMatcher?: 'best fit' | 'basic';
 }
 
-export const isValidDate = (date: Date | number): boolean => isDate(date) && !Number.isNaN(date.getTime());
+export const isValidDate = (date: Date): boolean => !Number.isNaN(date.getTime());
 
 /**
  * Represents a local date without a time component. This class provides methods
@@ -59,6 +82,9 @@ export class LocalDate {
 
     /**
      * Creates a new date. The call goes through various constructor overloads.
+     *
+     * If you are using parameters that are causing an overflow, this constructor will resolve the overflow.
+     * If you don't want to resolve the overflow and want a validation of your input, consider using {@link LocalDate.of} instead.
      *
      * 1. Create a date based on an ISO string:
      *    Use the constructor with a string as the argument.
@@ -112,30 +138,45 @@ export class LocalDate {
      * @param month If option 2 is selected, the month as a {@link Month} enum
      * @param day If option 2 is selected, the day as a number
      */
-    public constructor(arg?: LocalDateString | Date | LocalDate | number, month?: Month, day?: number) {
-        let date = new Date(NaN);
+    public constructor(arg?: string | Date | LocalDate | number, month?: Month, day?: number) {
+        if (typeof arg === 'string') {
+            const [date] = arg.split('T');
+            if (date) {
+                const [yyyy, mm, dd] = date.split('-').map(Number);
 
-        if (isLocalDateString(arg)) {
-            const [yyyy, mm, dd] = arg.split('-').map(Number);
-
-            if (typeof yyyy === 'number' && isMonth(mm) && typeof dd === 'number') {
-                date = new Date(Date.UTC(yyyy, mm - 1, dd));
+                this.year = isPossibleYear(yyyy) ? yyyy : NaN;
+                this.month = isPossibleMonth(mm) && isMonth(mm - 1) ? mm - 1 : NaN;
+                this.date = isPossibleDay(dd) ? dd : NaN;
+            } else {
+                this.year = NaN;
+                this.month = NaN;
+                this.date = NaN;
             }
         } else if (arg instanceof LocalDate) {
-            date = new Date(Date.UTC(arg.year, arg.month, arg.date));
+            this.year = arg.year;
+            this.month = arg.month;
+            this.date = arg.date;
         } else if (typeof arg === 'number') {
             if (typeof month !== 'undefined' && typeof day !== 'undefined') {
-                date = new Date(Date.UTC(arg, month, day));
+                const date = new Date(arg, month, day);
+
+                this.year = date.getFullYear();
+                this.month = date.getMonth();
+                this.date = date.getDate();
             } else {
-                date = new Date(arg);
+                const date = new Date(arg);
+
+                this.year = date.getFullYear();
+                this.month = date.getMonth();
+                this.date = date.getDate();
             }
         } else {
-            date = arg instanceof Date ? arg : new Date();
-        }
+            const date = arg instanceof Date ? arg : new Date();
 
-        this.year = date.getUTCFullYear();
-        this.month = date.getUTCMonth();
-        this.date = date.getUTCDate();
+            this.year = date.getFullYear();
+            this.month = date.getMonth();
+            this.date = date.getDate();
+        }
     }
 
     /**
@@ -157,11 +198,20 @@ export class LocalDate {
      * @returns a LocalDate instance based on the provided ISO-8061 string
      */
     public static parse(val: LocalDateString): LocalDate {
-        return new LocalDate(val);
+        const [yyyy, mm, dd] = val.split('-').map(Number);
+        if (!yyyy || !mm || !dd) {
+            throw new Error('Could not parse date, invalid date-string');
+        }
+
+        const date = new LocalDate(val);
+        validateLocalDate(date, yyyy, mm - 1, dd);
+
+        return date;
     }
 
     /**
-     * Creates a LocalDate instance from the specified year, month, and day of month.
+     * Creates a LocalDate instance from the specified year, month, and day of the month.
+     * Throws an error if the provided year, month, or day of the month is invalid.
      *
      * @param year the year
      * @param month the month
@@ -169,7 +219,10 @@ export class LocalDate {
      * @returns a LocalDate instance based on the provided year, month, and day of month
      */
     public static of(year: number, month: Month, date: number): LocalDate {
-        return new LocalDate(year, month, date);
+        const d = new LocalDate(year, month, date);
+        validateLocalDate(d, year, month, date);
+
+        return d;
     }
 
     /**

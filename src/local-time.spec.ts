@@ -1,4 +1,4 @@
-import { LocalTime } from './local-time';
+import { LocalTime, type LocalTimeString } from './local-time';
 import { Month } from './month';
 
 describe('LocalTime', () => {
@@ -62,6 +62,16 @@ describe('LocalTime', () => {
         expect(time.getSeconds()).toBe(now.getSeconds());
     });
 
+    it ('should create a LocalTime instance of now', () => {
+        const time = LocalTime.now();
+        const now = new Date();
+
+        expect(time.valid).toBe(true);
+        expect(time.getHours()).toBe(now.getHours());
+        expect(time.getMinutes()).toBe(now.getMinutes());
+        expect(time.getSeconds()).toBe(now.getSeconds());
+    });
+
     it ('should create a LocalTime based on a date', () => {
         const time = new LocalTime(new Date(2022, 1, 1, 12, 34, 56));
         expect(time.valid).toBe(true);
@@ -83,6 +93,36 @@ describe('LocalTime', () => {
     it ('should create an invalid LocalTime', () => {
         const time = new LocalTime(NaN);
         expect(time.valid).toBe(false);
+    });
+
+    it ('should parse a valid LocalTime', () => {
+        const time = LocalTime.parse('12:34:56');
+        expect(time.valid).toBe(true);
+        expect(time.getHours()).toBe(12);
+        expect(time.getMinutes()).toBe(34);
+        expect(time.getSeconds()).toBe(56);
+        expect(time.getMilliseconds()).toBe(0);
+    });
+
+    it ('should throw an error while parsing invalid LocalTime', () => {
+        expect(() => LocalTime.parse('invalid' as LocalTimeString)).toThrow();
+        expect(() => LocalTime.parse('25:99')).toThrow();
+        expect(() => LocalTime.parse('12:34:56.1000')).toThrow();
+    });
+
+    it ('should create a LocalTime from hours, minutes, seconds and milliseconds', () => {
+        const time = LocalTime.of(12, 34, 56, 100);
+        expect(time.getHours()).toBe(12);
+        expect(time.getMinutes()).toBe(34);
+        expect(time.getSeconds()).toBe(56);
+        expect(time.getMilliseconds()).toBe(100);
+    });
+
+    it ('should throw an error while creating invalid LocalTime', () => {
+        expect(() => LocalTime.of(25, 0, 0, 0)).toThrow();
+        expect(() => LocalTime.of(0, 60, 0, 0)).toThrow();
+        expect(() => LocalTime.of(0, 0, 60, 0)).toThrow();
+        expect(() => LocalTime.of(0, 0, 0, 1000)).toThrow();
     });
 
     it ('should return false on comparison with invalid times', () => {

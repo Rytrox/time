@@ -38,6 +38,28 @@ export const isLocalTimeString = (val: unknown): val is LocalTimeString => {
     return false;
 };
 
+const validateLocalTime = (time: LocalTime, hour: number, minute: number, second?: number, ms?: number) => {
+    if (!time.valid) {
+        throw new Error('Invalid time');
+    }
+
+    if (time.getHours() !== hour) {
+        throw new Error('Invalid hour');
+    }
+
+    if (time.getMinutes() !== minute) {
+        throw new Error('Invalid minute');
+    }
+
+    if (typeof second === 'number' && time.getSeconds() !== second) {
+        throw new Error('Invalid second');
+    }
+
+    if (typeof ms === 'number' && time.getMilliseconds() !== ms) {
+        throw new Error('Invalid millisecond');
+    }
+};
+
 interface TimeFormatOptions {
     localeMatcher?: 'best fit' | 'lookup';
     hour?: 'numeric' | '2-digit';
@@ -68,6 +90,9 @@ export class LocalTime {
 
     /**
      * Creates a new time. The call goes through various constructor overloads.
+     *
+     * If the parameters are overflowing, this constructor will recalculate the time to match the overflow.
+     * If you don't want this behavior, consider using {@link LocalTime.parse} or {@link LocalTime.of} instead.
      *
      * 1. Create a time based on an ISO string:
      *    Use the constructor with a string as the argument.
@@ -152,6 +177,49 @@ export class LocalTime {
         this.minutes = time.getMinutes();
         this.seconds = time.getSeconds();
         this.milliseconds = time.getMilliseconds();
+    }
+
+    /**
+     * Creates a new LocalTime instance representing the current time.
+     *
+     * @returns A new LocalTime instance representing the current time.
+     */
+    public static now(): LocalTime {
+        return new LocalTime();
+    }
+
+    /**
+     * Creates a new LocalTime instance with the specified hour, minute, second, and millisecond.
+     *
+     * @param hour - The hour component of the time (0-23).
+     * @param minute - The minute component of the time (0-59).
+     * @param second - The second component of the time (0-59). Defaults to 0 if not provided.
+     * @param millisecond - The millisecond component of the time (0-999). Defaults to 0 if not provided.
+     * @returns A new LocalTime instance representing the specified time.
+     */
+    public static of(hour: number, minute: number, second?: number, millisecond?: number): LocalTime {
+        const time = new LocalTime(hour, minute, second, millisecond);
+        validateLocalTime(time, hour, minute, second, millisecond);
+
+        return time;
+    }
+
+    /**
+     * Creates a new LocalTime instance from an ISO 8601 formatted string.
+     *
+     * @param iso - The ISO 8601 formatted string representing the time.
+     * @returns A new LocalTime instance representing the specified time.
+     */
+    public static parse(iso: LocalTimeString): LocalTime {
+        const [hh, mm, ss, ms] = iso.split(/[:.]/u).map(Number);
+        if (!isHours(hh) || !isMinutes(mm)) {
+            throw new Error('Invalid time');
+        }
+
+        const time = new LocalTime(iso);
+        validateLocalTime(time, hh, mm, ss, ms);
+
+        return time;
     }
 
     /**

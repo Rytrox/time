@@ -34,7 +34,7 @@ export class YearMonth {
             const [yyyy, mm] = year.split('-').map(Number);
 
             this.year = yyyy ?? NaN;
-            this.month = typeof mm === 'number' ? mm - 1 : NaN;
+            this.month = typeof mm === 'number' && isMonth(mm - 1) ? mm - 1 : NaN;
         } else if (year) {
             this.year = year.getFullYear();
             this.month = year.getMonth();
@@ -52,8 +52,14 @@ export class YearMonth {
      *
      * @param value the ISO-8601 string to parse
      */
-    public static parse(value: string): YearMonth {
-        return new YearMonth(value);
+    public static parse(value: YearMonthString): YearMonth {
+        const y = new YearMonth(value);
+
+        if (!y.valid) {
+            throw new Error('Invalid YearMonth');
+        }
+
+        return y;
     }
 
     /**
@@ -65,7 +71,13 @@ export class YearMonth {
      * @returns a YearMonth based on the provided year and month
      */
     public static of(year: number, month: Month): YearMonth {
-        return new YearMonth(year, month);
+        const y = new YearMonth(year, month);
+
+        if (!y.valid) {
+            throw new Error('Invalid YearMonth');
+        }
+
+        return y;
     }
 
     /**

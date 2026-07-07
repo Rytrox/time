@@ -162,56 +162,56 @@ const schema = yup.object({
 
 ## `LocalDate`
 
-| Method                                                                                | Description                    |
-|---------------------------------------------------------------------------------------|--------------------------------|
-| `LocalDate.now()`                                                                     | Returns today's date           |
-| `LocalDate.parse(str)`                                                                | Parses an ISO date string      |
-| `LocalDate.of(year, month, dayOfMonth)`                                               | Creates a date from components |
-|                                                                                       |                                |
-| `LocalDate#plusDays(n)` / `LocalDate#minusDays(n)`                                    | Add / subtract days            |
-| `LocalDate#plusMonths(n)` / `LocalDate#minusMonths(n)`                                | Add / subtract months          |
-| `LocalDate#plusYears(n)` / `LocalDate#minusYears(n)`                                  | Add / subtract years           |
-| `LocalDate#withDayOfMonth(d)`                                                         | New instance with day of month |
-| `LocalDate#withMonth(m)`                                                              | New instance with month        |
-| `LocalDate#withYear(y)`                                                               | New instance with year         |
-| `LocalDate#isBefore(other)` / `LocalDate#isEqual(other)` / `LocalDate#isAfter(other)` | Compare Date                   |
-| `LocalDate#atStartOfDay()`                                                            | Convert to JS Date at midnight |
-| `LocalDate#atTime(h, m, s?, ms?)`                                                     | Convert to JS Date at time     |
-| `LocalDate#toISOString()`                                                             | Convert to ISO string          |
-| `LocalDate#toLocaleString(locale?, options?)`                                         | Convert to locale string       |
+| Method                                                                                | Description                                  |
+|---------------------------------------------------------------------------------------|----------------------------------------------|
+| `LocalDate.now()`                                                                     | Returns today's date                         |
+| `LocalDate.parse(str)`                                                                | Parses an ISO date string and validates      |
+| `LocalDate.of(year, month, dayOfMonth)`                                               | Creates a date from components and validates |
+|                                                                                       |                                              |
+| `LocalDate#plusDays(n)` / `LocalDate#minusDays(n)`                                    | Add / subtract days                          |
+| `LocalDate#plusMonths(n)` / `LocalDate#minusMonths(n)`                                | Add / subtract months                        |
+| `LocalDate#plusYears(n)` / `LocalDate#minusYears(n)`                                  | Add / subtract years                         |
+| `LocalDate#withDayOfMonth(d)`                                                         | New instance with day of month               |
+| `LocalDate#withMonth(m)`                                                              | New instance with month                      |
+| `LocalDate#withYear(y)`                                                               | New instance with year                       |
+| `LocalDate#isBefore(other)` / `LocalDate#isEqual(other)` / `LocalDate#isAfter(other)` | Compare Date                                 |
+| `LocalDate#atStartOfDay()`                                                            | Convert to JS Date at midnight               |
+| `LocalDate#atTime(h, m, s?, ms?)`                                                     | Convert to JS Date at time                   |
+| `LocalDate#toISOString()`                                                             | Convert to ISO string                        |
+| `LocalDate#toLocaleString(locale?, options?)`                                         | Convert to locale string                     |
 
 ## `LocalTime`
 
-| Method                                                                                | Description                    |
-|---------------------------------------------------------------------------------------|--------------------------------|
-| `LocalTime.now()`                                                                     | Returns current time           |
-| `LocalTime.parse(str)`                                                                | Parses an ISO time string      |
-| `LocalTime.of(h, m, s?, ms?)`                                                         | Creates a time from components |
-|                                                                                       |                                |
-| `LocalTime#plusHours(n)` / `LocalTime#minusHours(n)`                                  | Add / subtract hours           |
-| `LocalTime#withHour(h)`                                                               | New instance with hour         |
-| `LocalTime#withMinute(m)`                                                             | New instance with minute       |
-| `LocalTime#withSecond(s)`                                                             | New instance with second       |
-| `LocalTime#withMilli(ms)`                                                             | New instance with millisecond  |
-| `LocalTime#isBefore(other)` / `LocalTime#isEqual(other)` / `LocalTime#isAfter(other)` | Compare Time                   |
-| `LocalTime#toISOString()`                                                             | Convert to ISO string          |
-| `LocalTime#toLocaleString(locale?, options?)`                                         | Convert to locale string       |
+| Method                                                                                | Description                                  |
+|---------------------------------------------------------------------------------------|----------------------------------------------|
+| `LocalTime.now()`                                                                     | Returns current time                         |
+| `LocalTime.parse(str)`                                                                | Parses an ISO time string and validates      |
+| `LocalTime.of(h, m, s?, ms?)`                                                         | Creates a time from components and validates |
+|                                                                                       |                                              |
+| `LocalTime#plusHours(n)` / `LocalTime#minusHours(n)`                                  | Add / subtract hours                         |
+| `LocalTime#withHour(h)`                                                               | New instance with hour                       |
+| `LocalTime#withMinute(m)`                                                             | New instance with minute                     |
+| `LocalTime#withSecond(s)`                                                             | New instance with second                     |
+| `LocalTime#withMilli(ms)`                                                             | New instance with millisecond                |
+| `LocalTime#isBefore(other)` / `LocalTime#isEqual(other)` / `LocalTime#isAfter(other)` | Compare Time                                 |
+| `LocalTime#toISOString()`                                                             | Convert to ISO string                        |
+| `LocalTime#toLocaleString(locale?, options?)`                                         | Convert to locale string                     |
 
 ## `YearMonth`
 
-| Method                                                                                | Description                          |
-|---------------------------------------------------------------------------------------|--------------------------------------|
-| `YearMonth.of(y, m)`                                                                  | Creates a year-month from components |
-| `YearMonth.now()`                                                                     | Returns current year-month           |
-| `YearMonth.parse(str)`                                                                | Parses an ISO year-month string      |
-|                                                                                       |                                      | 
-| `YearMonth#plusYears(n)` / `YearMonth#minusYears(n)`                                  | Add / subtract years                 |
-| `YearMonth#plusMonths(n)` / `YearMonth#minusMonths(n)`                                | Add / subtract months                |
-| `YearMonth#withYear(y)`                                                               | New instance with year               |
-| `YearMonth#withMonth(m)`                                                              | New instance with month              |
-| `YearMonth#isBefore(other)` / `YearMonth#isEqual(other)` / `YearMonth#isAfter(other)` | Compare YearMonth                    |
-| `YearMonth#toISOString()`                                                             | Convert to ISO string                |
-| `YearMonth#toLocaleString(locale?, options?)`                                         | Convert to locale string             |
+| Method                                                                                | Description                                        |
+|---------------------------------------------------------------------------------------|----------------------------------------------------|
+| `YearMonth.of(y, m)`                                                                  | Creates a year-month from components and validates |
+| `YearMonth.now()`                                                                     | Returns current year-month                         |
+| `YearMonth.parse(str)`                                                                | Parses an ISO year-month string and validates      |
+|                                                                                       |                                                    | 
+| `YearMonth#plusYears(n)` / `YearMonth#minusYears(n)`                                  | Add / subtract years                               |
+| `YearMonth#plusMonths(n)` / `YearMonth#minusMonths(n)`                                | Add / subtract months                              |
+| `YearMonth#withYear(y)`                                                               | New instance with year                             |
+| `YearMonth#withMonth(m)`                                                              | New instance with month                            |
+| `YearMonth#isBefore(other)` / `YearMonth#isEqual(other)` / `YearMonth#isAfter(other)` | Compare YearMonth                                  |
+| `YearMonth#toISOString()`                                                             | Convert to ISO string                              |
+| `YearMonth#toLocaleString(locale?, options?)`                                         | Convert to locale string                           |
 
 License
 ISC — © The Rytrox Group
