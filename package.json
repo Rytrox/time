@@ -1,11 +1,16 @@
 {
   "name": "@rytrox/time",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Useful Date and Time-Types for TypeScript",
   "repository": {
     "type": "git",
-    "url": "git@git.juniorjob.de:shared/date-utils.git"
+    "url": "git+https://github.com/Rytrox/time.git"
   },
+  "exports": {
+    ".": "./index.js",
+    "./yup": "./yup/index.js"
+  },
+  "private": false,
   "keywords": [
     "typescript",
     "date",
@@ -37,7 +42,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.1"
   },
-  "optionalDependencies": {
-    "yup": "^1.7.1"
+  "peerDependencies": {
+    "yup": "^1.7.0"
   }
 }

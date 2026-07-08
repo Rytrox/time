@@ -6,13 +6,13 @@ import {
     type Maybe,
     type Message,
     type NotNull,
-    Reference,
+    type Reference,
     Schema,
     type SetFlag,
     type ToggleDefault,
     type UnsetFlag
 } from 'yup';
-import { LocalDate } from './local-date';
+import { LocalDate } from '../local-date';
 
 export interface LocalDateSchema<T extends Maybe<LocalDate>, C = AnyObject, D = undefined, F extends Flags = ''> extends Schema<T, AnyObject, D, F> {
     default<M extends Maybe<T>>(def: DefaultThunk<M, C>): LocalDateSchema<T, C, M, ToggleDefault<F, M>>;

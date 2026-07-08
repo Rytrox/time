@@ -145,7 +145,7 @@ isYearMonthString('2024-03');       // true
 Requires `yup` to be installed.
 
 ```ts
-import {localDate, localTime, yearMonth} from '@rytrox/time';
+import {localDate, localTime, yearMonth} from '@rytrox/time/yup';
 import * as yup from 'yup';
 
 const schema = yup.object({

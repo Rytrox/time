@@ -6,14 +6,14 @@ import {
     type Maybe,
     type Message,
     type NotNull,
-    Reference,
+    type Reference,
     Schema,
     type SetFlag,
     type ToggleDefault,
     type UnsetFlag
 } from 'yup';
-import { LocalDate } from './local-date';
-import { YearMonth } from './year-month';
+import { LocalDate } from '../local-date';
+import { YearMonth } from '../year-month';
 
 export interface YearMonthSchema<T extends Maybe<YearMonth> = YearMonth | undefined, C extends AnyObject = AnyObject, D = undefined, F extends Flags = ''> extends Schema<T, C, D, F> {
     default<M extends Maybe<T>>(def: DefaultThunk<M, C>): YearMonthSchema<T, C, M, ToggleDefault<F, M>>;
