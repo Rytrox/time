@@ -18,4 +18,3 @@ export {
     isYearMonthString,
     YearMonth
 } from './year-month';
-

@@ -144,20 +144,20 @@ export class LocalDate {
             if (date) {
                 const [yyyy, mm, dd] = date.split('-').map(Number);
 
-                this.year = isPossibleYear(yyyy) ? yyyy : NaN;
-                this.month = isPossibleMonth(mm) && isMonth(mm - 1) ? mm - 1 : NaN;
-                this.date = isPossibleDay(dd) ? dd : NaN;
+                this.year = isPossibleYear(yyyy) ? yyyy : Number.NaN;
+                this.month = isPossibleMonth(mm) && isMonth(mm - 1) ? mm - 1 : Number.NaN;
+                this.date = isPossibleDay(dd) ? dd : Number.NaN;
             } else {
-                this.year = NaN;
-                this.month = NaN;
-                this.date = NaN;
+                this.year = Number.NaN;
+                this.month = Number.NaN;
+                this.date = Number.NaN;
             }
         } else if (arg instanceof LocalDate) {
             this.year = arg.year;
             this.month = arg.month;
             this.date = arg.date;
         } else if (typeof arg === 'number') {
-            if (typeof month !== 'undefined' && typeof day !== 'undefined') {
+            if (typeof month === 'number' && typeof day === 'number') {
                 const date = new Date(arg, month, day);
 
                 this.year = date.getFullYear();
@@ -319,7 +319,7 @@ export class LocalDate {
 
     /**
      * Returns the day of the month.
-     * Returns NaN if the date is invalid.
+     * Returns Number.NaN if the date is invalid.
      *
      * @returns The day of the month
      */
@@ -329,7 +329,7 @@ export class LocalDate {
 
     /**
      * Returns the day of the week.
-     * Returns NaN if the date is invalid.
+     * Returns Number.NaN if the date is invalid.
      *
      * @returns The day of the week
      */
@@ -339,7 +339,7 @@ export class LocalDate {
 
     /**
      * Returns the year.
-     * Returns NaN if the date is invalid.
+     * Returns Number.NaN if the date is invalid.
      *
      * @returns The year
      */
@@ -349,7 +349,7 @@ export class LocalDate {
 
     /**
      * Returns the month. January is encoded as 0 and December as 11.
-     * Returns NaN if the date is invalid.
+     * Returns Number.NaN if the date is invalid.
      *
      * @returns The month
      */
@@ -425,7 +425,7 @@ export class LocalDate {
      */
     public atStartOfDay(): Date {
         if (!this.valid) {
-            return new Date(NaN);
+            return new Date(Number.NaN);
         }
 
         return new Date(this.year, this.month, this.date);
@@ -473,7 +473,7 @@ export class LocalDate {
      */
     public atTime(hour: number | LocalTime, minute = 0, second = 0, ms = 0): Date {
         if (!this.valid) {
-            return new Date(NaN);
+            return new Date(Number.NaN);
         }
 
         if (hour instanceof LocalTime) {

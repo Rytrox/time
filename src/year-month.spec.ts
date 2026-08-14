@@ -1,7 +1,12 @@
+import { YearMonth, isYearMonthString } from './year-month';
 import { Month } from './month';
-import { YearMonth } from './year-month';
 
 describe('YearMonth', () => {
+    it ('should be a valid YearMonthString', () => {
+        expect(isYearMonthString('2023-01')).toBe(true);
+        expect(isYearMonthString('2023-12')).toBe(true);
+    });
+
     it ('should create YearMonth from valid year and month', () => {
         const yearMonth = new YearMonth(2023, Month.JANUARY);
         expect(yearMonth).toBeDefined();

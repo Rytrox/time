@@ -7,7 +7,7 @@ export const isYearMonthString = (val: unknown): val is YearMonthString => {
     if (typeof val === 'string') {
         const [year, month] = val.split('-').map(Number);
 
-        return typeof year === 'number' && year > 0 && isMonth(month);
+        return typeof year === 'number' && year > 0 && typeof month === 'number' && month > 0 && month <= 12;
     }
 
     return false;
@@ -21,20 +21,20 @@ export class YearMonth {
 
     public constructor(year?: number | Date | LocalDate | YearMonth | string, month?: Month) {
         if (typeof year === 'number') {
-            if (typeof month === 'undefined') {
+            if (isMonth(month)) {
+                this.year = year;
+                this.month = month;
+            } else {
                 const date = new Date(year);
 
                 this.year = date.getFullYear();
                 this.month = date.getMonth();
-            } else {
-                this.year = year;
-                this.month = month;
             }
         } else if (typeof year === 'string') {
             const [yyyy, mm] = year.split('-').map(Number);
 
-            this.year = yyyy ?? NaN;
-            this.month = typeof mm === 'number' && isMonth(mm - 1) ? mm - 1 : NaN;
+            this.year = yyyy ?? Number.NaN;
+            this.month = typeof mm === 'number' && isMonth(mm - 1) ? mm - 1 : Number.NaN;
         } else if (year) {
             this.year = year.getFullYear();
             this.month = year.getMonth();
@@ -73,7 +73,7 @@ export class YearMonth {
     public static of(year: number, month: Month): YearMonth {
         const y = new YearMonth(year, month);
 
-        if (!y.valid) {
+        if (!y.valid || y.getMonth() !== month || y.getFullYear() !== year) {
             throw new Error('Invalid YearMonth');
         }
 

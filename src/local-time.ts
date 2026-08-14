@@ -32,7 +32,7 @@ export const isLocalTimeString = (val: unknown): val is LocalTimeString => {
         }
 
         const iso = datetime.toISOString();
-        return iso.slice(11, iso.length - 1).startsWith(val);
+        return iso.slice(11, -1).startsWith(val);
     }
 
     return false;
@@ -153,18 +153,18 @@ export class LocalTime {
             time = new Date();
 
             time.setHours(
-                isHours(hh) ? hh : NaN,
-                isMinutes(mm) ? mm : NaN,
+                isHours(hh) ? hh : Number.NaN,
+                isMinutes(mm) ? mm : Number.NaN,
                 0,
                 0
             );
 
             if (typeof ss === 'number') {
-                time.setSeconds(isSeconds(ss) ? ss : NaN);
+                time.setSeconds(isSeconds(ss) ? ss : Number.NaN);
             }
 
             if (typeof ms === 'number') {
-                time.setMilliseconds(isMilliseconds(ms) ? ms : NaN);
+                time.setMilliseconds(isMilliseconds(ms) ? ms : Number.NaN);
             }
         } else if (typeof arg === 'number') {
             time = new Date();
