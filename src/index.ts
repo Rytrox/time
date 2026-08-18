@@ -11,7 +11,16 @@ export {
     LocalTime
 } from './local-time';
 
-export { Month, isMonth } from './month';
+export {
+    JSMonth,
+    Month,
+    toJSMonth,
+    toMonth,
+    isJSMonth,
+    isMonth,
+    JS_MONTHS,
+    MONTHS
+} from './month';
 
 export {
     type YearMonthString,

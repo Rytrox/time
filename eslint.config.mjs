@@ -38,6 +38,13 @@ export default defineConfig({
         "max-lines-per-function": 'off',
         'init-declarations': 'off',
         'max-lines': 'off',
-        'prefer-destructuring': 'off'
+        'prefer-destructuring': 'off',
+        'no-underscore-dangle': [
+            'error',
+            {
+                enforceInClassFields: false,
+                allowAfterThis: true,
+            }
+        ],
     }
 })

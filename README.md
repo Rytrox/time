@@ -27,15 +27,15 @@ npm install @rytrox/time
 ## `LocalDate`
 
 ```ts
-import {LocalDate, Month} from '@rytrox/time';
+import {LocalDate, JSMonth, Month} from '@rytrox/time';
 
-// Create from ISO string
+// Create from ISO string without date validation
 const date = new LocalDate('2024-03-15');
 
-// Create from year, month, day (month is zero-based, or use the Month enum)
-const date2 = new LocalDate(2024, Month.MARCH, 15);
+// Create from year, month, day (month is zero-based, or use the JSMonth enum)
+const date2 = new LocalDate(2024, JSMonth.MARCH, 15);
 
-// Factory methods
+// Factory methods (with date validation)
 const today = LocalDate.now();
 const parsed = LocalDate.parse('2024-03-15');
 const specific = LocalDate.of(2024, Month.MARCH, 15);
@@ -94,16 +94,16 @@ time.toLocaleString('de-DE');           // "09:30:00"
 ```ts
 import {YearMonth, Month} from '@rytrox/time';
 
-// Create from year and month
-const ym = new YearMonth(2024, Month.MARCH);
+// Create from year and month (without validation)
+const ym = new YearMonth(2024, JSMonth.MARCH);
 
-// Factory methods
+// Factory methods (with validation)
 const current = YearMonth.now();
 const parsed = YearMonth.parse('2024-03');
 const specific = YearMonth.of(2024, Month.MARCH);
 
 // Navigation
-const next = new YearMonth(2024, Month.APRIL);
+const next = YearMonth.of(2024, Month.APRIL);
 ym.isBefore(next);   // true
 ym.isAfter(next);    // false
 ym.isEqual(parsed);  // true
@@ -121,10 +121,13 @@ ym.toLocaleString('de-DE'); // "03/2024"
 ## `Month` & `DayOfWeek`
 
 ```ts
-import {Month, DayOfWeek} from '@rytrox/time';
+import {JSMonth, Month, DayOfWeek} from '@rytrox/time';
 
-Month.JANUARY   // 0 (zero-based, compatible with JS Date)
-Month.DECEMBER  // 11
+Month.JANUARY   // 1
+Month.DECEMBER  // 12
+
+JSMonth.JANUARY   // 0 (zero-based, compatible with JS Date)
+JSMonth.DECEMBER  // 11
 
 DayOfWeek.SUNDAY    // 0
 DayOfWeek.SATURDAY  // 6
@@ -155,6 +158,26 @@ const schema = yup.object({
         .min(yup.ref('startDate'), 'End date must be after start date'),
     meetingTime: localTime().required(),
     billingMonth: yearMonth().required(),
+});
+```
+
+## Zod Schema Integration (optional)
+
+Requires `zod` v4 to be installed.
+
+```ts
+import {localdate, localtime, yearmonth} from '@rytrox/time/zod';
+import {LocalDate, Month} from "@rytrox/time";
+import {z} from 'zod';
+
+const date = LocalDate.of(2023, Month.DECEMBER, 12);
+
+const schema = z.object({
+  startDate: localdate('Start date is required'),
+  endDate: localdate('End date is required')
+          .min(date, 'End date must be after date'),
+  meetingTime: localtime(),
+  billingMonth: yearmonth(),
 });
 ```
 
