@@ -203,10 +203,7 @@ export class LocalDate {
             throw new Error('Could not parse date, invalid date-string');
         }
 
-        const date = new LocalDate(val);
-        validateLocalDate(date, yyyy, mm - 1, dd);
-
-        return date;
+        return LocalDate.of(yyyy, mm, dd);
     }
 
     /**

@@ -141,6 +141,15 @@ describe('LocalDate', () => {
         expect(date.month).toBe(Month.NOVEMBER);
         expect(date.getDate()).toBe(25);
         expect(date.dateOfMonth).toBe(25);
+
+        const date1 = LocalDate.parse('2009-01-19');
+        expect(date1.valid).toBe(true);
+        expect(date1.getFullYear()).toBe(2009);
+        expect(date1.year).toBe(2009);
+        expect(date1.getMonth()).toBe(JSMonth.JANUARY);
+        expect(date1.month).toBe(Month.JANUARY);
+        expect(date1.getDate()).toBe(19);
+        expect(date1.dateOfMonth).toBe(19);
     });
 
     it ('should throw an error while parsing with ISO-8601', () => {
