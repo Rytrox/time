@@ -1,6 +1,6 @@
 {
   "name": "@rytrox/time",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Useful Date and Time-Types for TypeScript",
   "repository": {
     "type": "git",
@@ -27,34 +27,19 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./yup": {
-      "import": {
-        "types": "./dist/yup/index.d.ts",
-        "default": "./dist/yup/index.js"
-      },
-      "require": {
-        "types": "./dist/yup/index.d.cts",
-        "default": "./dist/yup/index.cjs"
-      }
+      "types": "./dist/yup/index.d.ts",
+      "import": "./dist/yup/index.js",
+      "require": "./dist/yup/index.cjs"
     },
     "./zod": {
-      "import": {
-        "types": "./dist/zod/index.d.ts",
-        "default": "./dist/zod/index.js"
-      },
-      "require": {
-        "types": "./dist/zod/index.d.cts",
-        "default": "./dist/zod/index.cjs"
-      }
+      "types": "./dist/zod/index.d.ts",
+      "import": "./dist/zod/index.js",
+      "require": "./dist/zod/index.cjs"
     }
   },
   "scripts": {
@@ -70,15 +55,20 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.25",
-    "eslint": "^10.8.1",
-    "jest": "^30.4.2",
+    "eslint": "^10.10.0",
+    "jest": "^30.5.1",
     "ts-jest": "^29.4.12",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.67.0"
+    "typescript-eslint": "^8.70.0"
   },
   "peerDependencies": {
     "yup": "^1.7.1",
-    "zod": "^4.4.3"
+    "zod": "^4.6.4"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "esbuild@0.27.7": true,
+    "unrs-resolver@1.12.2": true
   }
 }

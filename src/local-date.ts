@@ -478,21 +478,12 @@ export class LocalDate {
      * Returns an invalid JS Date if the date is invalid.
      *
      * @param hour the hour in 24h format
-     * @param minute the minute
-     * @param second the second
-     * @param ms the millisecond
+     * @param minute the minute, standard 0
+     * @param second the second, standard 0
+     * @param ms the millisecond, standard 0
      * @returns The date at the specified time of your timezone
      */
-    public atTime(hour: number, minute: number, second?: number, ms?: number): Date;
-
-    /**
-     * Converts the date to a JS Date with the specified time.
-     * Returns an invalid JS Date if the date is invalid.
-     *
-     * @param time the specified time
-     * @returns The date at the specified time of your timezone
-     */
-    public atTime(time: LocalTime): Date;
+    public atTime(hour: number | LocalTime, minute?: number, second?: number, ms?: number): Date;
 
     /**
      * Converts the date to a JS Date with the specified time.
