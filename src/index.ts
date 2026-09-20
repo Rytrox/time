@@ -1,4 +1,8 @@
-export { type DayOfWeek } from './day';
+export {
+    DayOfWeek,
+    isDayOfWeek,
+    DAYS
+} from './day';
 export {
     type LocalDateString,
     isLocalDateString,
