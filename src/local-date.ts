@@ -50,15 +50,7 @@ const validateLocalDate = (date: LocalDate, year: number, month: JSMonth, day: n
     }
 };
 
-interface DateFormatOptions {
-    localeMatcher?: 'best fit' | 'lookup';
-    weekday?: 'long' | 'short' | 'narrow';
-    era?: 'long' | 'short' | 'narrow';
-    year?: 'numeric' | '2-digit';
-    month?: 'numeric' | '2-digit' | 'long' | 'short' | 'narrow';
-    day?: 'numeric' | '2-digit';
-    formatMatcher?: 'best fit' | 'basic';
-}
+type DateFormatOptions = Pick<Intl.DateTimeFormatOptions, 'localeMatcher' | 'weekday' | 'era' | 'year' | 'month' | 'day' | 'formatMatcher'>;
 
 export const isValidDate = (date: Date): boolean => !Number.isNaN(date.getTime());
 

@@ -60,14 +60,7 @@ const validateLocalTime = (time: LocalTime, hour: number, minute: number, second
     }
 };
 
-interface TimeFormatOptions {
-    localeMatcher?: 'best fit' | 'lookup';
-    hour?: 'numeric' | '2-digit';
-    minute?: 'numeric' | '2-digit';
-    second?: 'numeric' | '2-digit';
-    formatMatcher?: 'best fit' | 'basic';
-    hour12?: boolean;
-}
+type TimeFormatOptions = Pick<Intl.DateTimeFormatOptions, 'localeMatcher' | 'hour' | 'minute' | 'second' | 'formatMatcher' | 'hour12'>;
 
 /**
  * Represents a time component without a date. This class provides methods
@@ -554,14 +547,13 @@ export class LocalTime {
         const date = new Date();
         date.setHours(this.hours, this.minutes, this.seconds, this.milliseconds);
 
-        return date.toLocaleString(format, {
-            formatMatcher: options?.formatMatcher,
-            hour: options?.hour ?? '2-digit',
-            hour12: options?.hour12,
-            localeMatcher: options?.localeMatcher,
-            minute: options?.minute ?? '2-digit',
-            second: options?.second ?? '2-digit'
-        });
+        const localeOptions = options ?? {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        };
+
+        return date.toLocaleString(format, localeOptions);
     }
 
     /**

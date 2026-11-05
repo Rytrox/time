@@ -443,6 +443,16 @@ describe('LocalTime', () => {
         expect(localeString).toBe('12:34:56');
     });
 
+    it ('should display locale string with specific format', () => {
+        const time = new LocalTime(12, 34, 56);
+        const localeString = time.toLocaleString('de-DE', {
+            hour: '2-digit',
+            minute: 'numeric'
+        });
+
+        expect(localeString).toBe('12:34');
+    });
+
     it ('should display string', () => {
         const time = new LocalTime(12, 34, 56);
         const toString = time.toString();
