@@ -25,7 +25,9 @@ Install Packages:
   stage: prepare
   image: node:current-alpine
   cache: &cache
-    key: ${CI_PROJECT_PATH_SLUG}-${CI_COMMIT_REF_SLUG}
+    key:
+      files:
+        - package-lock.json
     paths:
       - node_modules
     policy: pull-push
