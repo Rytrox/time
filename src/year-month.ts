@@ -1,13 +1,22 @@
 import { JSMonth, Month, isJSMonth, isMonth, toJSMonth, toMonth } from './month';
-import { LocalDate } from './local-date';
+import { LocalDate, isValidDate } from './local-date';
+import { createLocalDate, createUTCDate } from './util';
 
 export type YearMonthString = `${number}-${0 | 1}${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
 
+const yearMonthRegex = /^\d{4}-\d{2}$/u;
+
+/**
+ * Checks whether the given value is a valid year-month string according to ISO-8601 (`YYYY-MM`).
+ *
+ * @param val the value to check
+ * @returns true if the value is a valid {@link YearMonthString}, otherwise false
+ */
 export const isYearMonthString = (val: unknown): val is YearMonthString => {
-    if (typeof val === 'string') {
+    if (typeof val === 'string' && yearMonthRegex.test(val)) {
         const [year, month] = val.split('-').map(Number);
 
-        return typeof year === 'number' && year > 0 && typeof month === 'number' && month > 0 && month <= 12;
+        return typeof year === 'number' && year > 0 && isMonth(month);
     }
 
     return false;
@@ -54,6 +63,10 @@ export class YearMonth {
      * @param value the ISO-8601 string to parse
      */
     public static parse(value: YearMonthString): YearMonth {
+        if (!isYearMonthString(value)) {
+            throw new Error('Invalid YearMonth');
+        }
+
         const y = new YearMonth(value);
 
         if (!y.valid) {
@@ -96,7 +109,10 @@ export class YearMonth {
      * @returns true if the YearMonth is valid, false otherwise
      */
     public get valid(): boolean {
-        return this._year > 0 && isJSMonth(this._month);
+        return Number.isInteger(this._year) && this._year > 0 &&
+            Number.isInteger(this._month) && isJSMonth(this._month) &&
+            // Upper bound: the year-month must be representable as a JS Date (until year 275760)
+            isValidDate(createUTCDate(this._year, this._month, 1));
     }
 
     public isBefore(other: Temporal): boolean {
@@ -215,7 +231,7 @@ export class YearMonth {
             return 'Invalid year-month';
         }
 
-        const date = new Date(this._year, this._month, 1);
+        const date = createLocalDate(this._year, this._month, 1);
 
         return `${date.toString().slice(4, 7)} ${date.toString().slice(11, 15)}`;
     }
@@ -225,15 +241,19 @@ export class YearMonth {
      *
      * @param lang The language to use for formatting
      * @param options Options for formatting the year-month
-     * @returns The localized string representation of the year-month
+     * @returns The localized string representation of the year-month, or 'Invalid Date' if the year-month is invalid
      */
     public toLocaleString(lang?: Intl.LocalesArgument, options?: YearMonthOptions): string {
+        if (!this.valid) {
+            return 'Invalid Date';
+        }
+
         const formatter = new Intl.DateTimeFormat(lang, {
             month: options?.month ?? '2-digit',
             year: options?.year ?? 'numeric'
         });
 
-        return formatter.format(new Date(this._year, this._month, 1));
+        return formatter.format(createLocalDate(this._year, this._month, 1));
     }
 
     /**
@@ -243,7 +263,7 @@ export class YearMonth {
      */
     public toISOString(): YearMonthString {
         const month = toMonth(this._month);
-        const iso = `${this._year.toString()}-${month.toFixed().padStart(2, '0')}`;
+        const iso = `${this._year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}`;
 
         if (!isYearMonthString(iso)) {
             throw new Error('Invalid year-month');

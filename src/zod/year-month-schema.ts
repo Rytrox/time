@@ -1,36 +1,13 @@
-import { type ZodType, core, z } from 'zod';
+import { type ComparableSchemaParams, type ZodComparable, defineComparableSchema } from './comparable-schema';
 import type { LocalDate } from '../local-date';
 import { YearMonth } from '../year-month';
 
 type Temporal = YearMonth | LocalDate | Date;
 
-export interface ZodYearMonth extends ZodType<YearMonth, YearMonth> {
-    min(min: Temporal, params?: string | core.$ZodSuperRefineParams): this;
-    max(max: Temporal, params?: string | core.$ZodSuperRefineParams): this;
-}
+export type ZodYearMonth = ZodComparable<YearMonth, Temporal>;
 
-const typeCheck = (val: ZodType<YearMonth, YearMonth>): val is ZodYearMonth =>
-    'max' in val && typeof val.max === 'function' &&
-    'min' in val && typeof val.min === 'function';
-
-export const yearmonth = (params?: string | core.$ZodCustomParams): ZodYearMonth => {
-    const schema = z.custom<YearMonth>(
-        val => val instanceof YearMonth,
-        params
+export const yearmonth: (params?: ComparableSchemaParams) => ZodYearMonth =
+    defineComparableSchema<YearMonth, Temporal>(
+        'ZodYearMonth',
+        (val): val is YearMonth => val instanceof YearMonth
     );
-
-    Object.assign(schema, {
-        max(max: Temporal, params?: string | core.$ZodSuperRefineParams) {
-            return schema.refine(val => !val.isAfter(max), params);
-        },
-        min(min: Temporal, params?: string | core.$ZodSuperRefineParams) {
-            return schema.refine(val => !val.isBefore(min), params);
-        }
-    });
-
-    if (!typeCheck(schema)) {
-        throw new Error('yearmonth schema is not a ZodYearMonth');
-    }
-
-    return schema;
-};

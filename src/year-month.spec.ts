@@ -5,6 +5,47 @@ describe('YearMonth', () => {
     it ('should be a valid YearMonthString', () => {
         expect(isYearMonthString('2023-01')).toBe(true);
         expect(isYearMonthString('2023-12')).toBe(true);
+        expect(isYearMonthString('0999-01')).toBe(true);
+    });
+
+    it ('should not be a valid YearMonthString', () => {
+        for (const value of [
+            '2023-01-15',
+            '2023-01-01T12:00:00',
+            '2023-1',
+            '23-01',
+            '2023-1.5',
+            '1.5-1.5',
+            '2023-00',
+            '2023-13',
+            '0000-01',
+            '+2023-01',
+            ' 2023-01',
+            '2023-01 ',
+            '',
+            202301,
+            null
+        ]) {
+            expect(isYearMonthString(value)).toBe(false);
+        }
+    });
+
+    it ('should only parse strict YearMonthStrings', () => {
+        for (const value of ['2023-01-15', '2023-1.5', '1.5-1.5', '2023-1', '2023-13']) {
+            // Cast simulates untyped input (e.g. from JSON)
+            expect(() => YearMonth.parse(value as `${number}-${0 | 1}${0}`)).toThrow();
+        }
+    });
+
+    it ('should be invalid for non-integer year or month', () => {
+        expect(new YearMonth('2023-1.5').valid).toBe(false);
+        expect(new YearMonth('2023.5-01').valid).toBe(false);
+        expect(() => new YearMonth('2023-1.5').toISOString()).toThrow();
+    });
+
+    it ('should pad the year to four digits in ISO-String', () => {
+        expect(new YearMonth(999, JSMonth.MARCH).toISOString()).toBe('0999-03');
+        expect(YearMonth.parse('0999-03').getFullYear()).toBe(999);
     });
 
     it ('should create YearMonth from valid year and month', () => {
@@ -76,7 +117,8 @@ describe('YearMonth', () => {
     });
 
     it ('should create YearMonth from Date', () => {
-        const yearMonth = new YearMonth(new Date('2023-01-01'));
+        // A Date is read in the local timezone, so the input must be created in local time as well
+        const yearMonth = new YearMonth(new Date(2023, 0, 1));
         expect(yearMonth).toBeDefined();
         expect(yearMonth.getFullYear()).toBe(2023);
         expect(yearMonth.year).toBe(2023);
@@ -86,7 +128,8 @@ describe('YearMonth', () => {
     });
 
     it ('should create YearMonth from UNIX timestamp', () => {
-        const yearMonth = new YearMonth(1672531200000);
+        // Timestamp of January 1st, 2023 at local midnight, so the test works in every timezone
+        const yearMonth = new YearMonth(new Date(2023, 0, 1).getTime());
         expect(yearMonth).toBeDefined();
         expect(yearMonth.getFullYear()).toBe(2023);
         expect(yearMonth.year).toBe(2023);
@@ -297,5 +340,24 @@ describe('YearMonth', () => {
 
     it ('should throw an error on getting iso string with invalid year', () => {
         expect(() => new YearMonth(NaN).toISOString()).toThrow();
+    });
+    it ('should keep years between 0 and 99', () => {
+        const yearMonth = YearMonth.of(50, Month.FEBRUARY);
+
+        expect(yearMonth.atEndOfMonth().toISOString()).toBe('0050-02-28');
+        expect(yearMonth.lengthOfMonth()).toBe(28);
+        expect(yearMonth.atDay(1).getFullYear()).toBe(50);
+        expect(yearMonth.toString()).toBe('Feb 0050');
+        expect(YearMonth.of(48, Month.FEBRUARY).lengthOfMonth()).toBe(29);
+    });
+    it ('should display invalid year-months as Invalid Date in locale string', () => {
+        expect(new YearMonth(NaN).toLocaleString()).toBe('Invalid Date');
+        expect(new YearMonth('foo').toLocaleString('de-DE')).toBe('Invalid Date');
+    });
+
+    it ('should be invalid beyond the range of JS dates', () => {
+        expect(new YearMonth(275760, JSMonth.SEPTEMBER).valid).toBe(true);
+        expect(new YearMonth(275760, JSMonth.OCTOBER).valid).toBe(false);
+        expect(new YearMonth(300000, JSMonth.JANUARY).valid).toBe(false);
     });
 });

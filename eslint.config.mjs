@@ -44,6 +44,9 @@ export default defineConfig({
             {
                 enforceInClassFields: false,
                 allowAfterThis: true,
+                allow: [
+                    "_custom" // Allow zod core _custom function
+                ]
             }
         ],
     }

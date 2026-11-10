@@ -1,33 +1,10 @@
-import { type ZodType, core, z } from 'zod';
+import { type ComparableSchemaParams, type ZodComparable, defineComparableSchema } from './comparable-schema';
 import { LocalTime } from '../local-time';
 
-export interface ZodLocalTime extends ZodType<LocalTime, LocalTime> {
-    min(min: LocalTime | Date, params?: string | core.$ZodSuperRefineParams): this;
-    max(max: LocalTime | Date, params?: string | core.$ZodSuperRefineParams): this;
-}
+export type ZodLocalTime = ZodComparable<LocalTime, LocalTime | Date>;
 
-const typeCheck = (val: ZodType<LocalTime, LocalTime>): val is ZodLocalTime =>
-    'max' in val && typeof val.max === 'function' &&
-    'min' in val && typeof val.min === 'function';
-
-export const localtime = (params?: string | core.$ZodCustomParams): ZodLocalTime => {
-    const schema = z.custom<LocalTime>(
-        val => val instanceof LocalTime,
-        params
+export const localtime: (params?: ComparableSchemaParams) => ZodLocalTime =
+    defineComparableSchema<LocalTime, LocalTime | Date>(
+        'ZodLocalTime',
+        (val): val is LocalTime => val instanceof LocalTime
     );
-
-    Object.assign(schema, {
-        max(max: LocalTime | Date, params?: string | core.$ZodSuperRefineParams) {
-            return schema.refine(val => !val.isAfter(max), params);
-        },
-        min(min: LocalTime | Date, params?: string | core.$ZodSuperRefineParams) {
-            return schema.refine(val => !val.isBefore(min), params);
-        }
-    });
-
-    if (!typeCheck(schema)) {
-        throw new Error('localtime schema is not a ZodLocalTime');
-    }
-
-    return schema;
-};

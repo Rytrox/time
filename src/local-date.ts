@@ -1,4 +1,5 @@
 import { JSMonth, Month, isJSMonth, isMonth, toJSMonth, toMonth } from './month';
+import { createLocalDate, createUTCDate, lengthOfMonth } from './util';
 import { DayOfWeek } from './day';
 import { LocalTime } from './local-time';
 
@@ -13,6 +14,8 @@ const isPossibleYear = (val: unknown): val is number => typeof val === 'number' 
 const isPossibleMonth = (val: unknown): val is number => typeof val === 'number' && Number.isInteger(val) && val >= 0 && val <= 12;
 const isPossibleDay = (val: unknown): val is number => typeof val === 'number' && Number.isInteger(val) && val >= 1 && val <= 31;
 
+export const isValidDate = (date: Date): boolean => !Number.isNaN(date.getTime());
+
 /**
  * Checks whether the given value is a valid date string according to ISO-8601 without a time component.
  *
@@ -25,7 +28,7 @@ export const isLocalDateString = (val: unknown): val is LocalDateString => {
         const [year, month, day] = val.split('-').map(Number);
 
         if (isPossibleYear(year) && isPossibleMonth(month) && isPossibleDay(day)) {
-            return new Date(Date.UTC(year, month - 1, day)).toISOString().split('T')[0] === val;
+            return createUTCDate(year, month - 1, day).toISOString().split('T')[0] === val;
         }
     }
 
@@ -52,7 +55,27 @@ const validateLocalDate = (date: LocalDate, year: number, month: JSMonth, day: n
 
 type DateFormatOptions = Pick<Intl.DateTimeFormatOptions, 'localeMatcher' | 'weekday' | 'era' | 'year' | 'month' | 'day' | 'formatMatcher'>;
 
-export const isValidDate = (date: Date): boolean => !Number.isNaN(date.getTime());
+/**
+ * Checks whether the given components describe an existing calendar date without any overflow
+ * (e.g. February 31st is rejected).
+ *
+ * @param year the year
+ * @param month the month as {@link JSMonth}
+ * @param day the day of month
+ * @returns true if the date exists, otherwise false
+ */
+const isExistingDate = (year: number, month: number, day: number): boolean => {
+    if (!Number.isInteger(year) || !Number.isInteger(month) || !isJSMonth(month) || !Number.isInteger(day)) {
+        return false;
+    }
+
+    const date = createUTCDate(year, month, day);
+
+    return isValidDate(date) &&
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month &&
+        date.getUTCDate() === day;
+};
 
 /**
  * Represents a local date without a time component. This class provides methods
@@ -139,6 +162,13 @@ export class LocalDate {
                 this._year = isPossibleYear(yyyy) ? yyyy : Number.NaN;
                 this._month = isPossibleMonth(mm) && isMonth(mm - 1) ? mm - 1 : Number.NaN;
                 this._dateOfMonth = isPossibleDay(dd) ? dd : Number.NaN;
+
+                // Strings are not resolved on overflow: a non-existing date (e.g. 2023-02-31) is invalid
+                if (!isExistingDate(this._year, this._month, this._dateOfMonth)) {
+                    this._year = Number.NaN;
+                    this._month = Number.NaN;
+                    this._dateOfMonth = Number.NaN;
+                }
             } else {
                 this._year = Number.NaN;
                 this._month = Number.NaN;
@@ -150,7 +180,7 @@ export class LocalDate {
             this._dateOfMonth = arg.getDate();
         } else if (typeof arg === 'number') {
             if (typeof month === 'number' && typeof day === 'number') {
-                const date = new Date(arg, month, day);
+                const date = createLocalDate(arg, month, day);
 
                 this._year = date.getFullYear();
                 this._month = date.getMonth();
@@ -232,7 +262,7 @@ export class LocalDate {
             if (this._year === other.getFullYear()) {
                 const otherMonth = other.getMonth();
 
-                if (isMonth(otherMonth)) {
+                if (isJSMonth(otherMonth)) {
                     if (this._month < otherMonth) {
                         return true;
                     }
@@ -282,7 +312,7 @@ export class LocalDate {
             if (this._year === other.getFullYear()) {
                 const otherMonth = other.getMonth();
 
-                if (isMonth(otherMonth)) {
+                if (isJSMonth(otherMonth)) {
                     if (this._month > otherMonth) {
                         return true;
                     }
@@ -303,7 +333,7 @@ export class LocalDate {
      * @returns true if the date is valid, otherwise false
      */
     public get valid(): boolean {
-        return isValidDate(new Date(Date.UTC(this._year, this._month, this._dateOfMonth)));
+        return isExistingDate(this._year, this._month, this._dateOfMonth);
     }
 
     /**
@@ -392,7 +422,7 @@ export class LocalDate {
         let isoDatetimeString: string | undefined;
 
         try {
-            [isoDatetimeString] = new Date(Date.UTC(this._year, this._month, this._dateOfMonth)).toISOString().split('T');
+            [isoDatetimeString] = createUTCDate(this._year, this._month, this._dateOfMonth).toISOString().split('T');
         } catch (e) {
             throw new Error('Invalid Date', { cause: e });
         }
@@ -453,7 +483,7 @@ export class LocalDate {
             return new Date(Number.NaN);
         }
 
-        return new Date(this._year, this._month, this._dateOfMonth);
+        return createLocalDate(this._year, this._month, this._dateOfMonth);
     }
 
     /**
@@ -493,64 +523,91 @@ export class LocalDate {
         }
 
         if (hour instanceof LocalTime) {
-            return new Date(this._year, this._month, this._dateOfMonth, hour.getHours(), hour.getMinutes(), hour.getSeconds(), hour.getMilliseconds());
+            return createLocalDate(this._year, this._month, this._dateOfMonth, hour.getHours(), hour.getMinutes(), hour.getSeconds(), hour.getMilliseconds());
         }
 
-        return new Date(this._year, this._month, this._dateOfMonth, hour, minute, second, ms);
+        return createLocalDate(this._year, this._month, this._dateOfMonth, hour, minute, second, ms);
+    }
+
+    /**
+     * Creates a date in the given year and month, keeping the day of month of this date.
+     * Month overflows are resolved into the year (e.g. month 12 => January of the next year).
+     * If the day of month does not exist in the target month, it is clamped to the last day of that month
+     * (e.g. January 31st + 1 month => February 28th), like `java.time.LocalDate` does.
+     *
+     * @param year the target year
+     * @param month the target month as {@link JSMonth}, may overflow
+     * @returns an instance of the new date
+     */
+    private atYearMonth(year: number, month: number): LocalDate {
+        const totalMonths = (Math.trunc(year) * 12) + Math.trunc(month);
+        const targetYear = Math.floor(totalMonths / 12);
+        const targetMonth = totalMonths - (targetYear * 12);
+        const day = Math.min(this._dateOfMonth, lengthOfMonth(targetYear, targetMonth));
+
+        return new LocalDate(targetYear, targetMonth, day);
     }
 
     /**
      * Creates a copy of this instance and adds the given years.
+     * If the day does not exist in the target year (February 29th), the last day of February is used.
      *
      * @param years the years to add
      * @returns an instance of the new date
      */
     public plusYears(years: number): LocalDate {
-        return new LocalDate(this._year + years, this._month, this._dateOfMonth);
+        return this.atYearMonth(this._year + Math.trunc(years), this._month);
     }
 
     /**
      * Creates a copy of this instance and subtracts the given years.
+     * If the day does not exist in the target year (February 29th), the last day of February is used.
      *
      * @param years the years to subtract
      * @returns an instance of the new date
      */
     public minusYears(years: number): LocalDate {
-        return new LocalDate(this._year - years, this._month, this._dateOfMonth);
+        return this.atYearMonth(this._year - Math.trunc(years), this._month);
     }
 
     /**
      * Creates a copy of this instance and sets the year to the given year.
+     * If the day does not exist in the target year (February 29th), the last day of February is used.
      *
      * @param year the year to set
      * @returns an instance of the new date
      */
     public withYear(year: number): LocalDate {
-        return new LocalDate(year, this._month, this._dateOfMonth);
+        return this.atYearMonth(year, this._month);
     }
 
     /**
      * Creates a copy of this instance and subtracts the given months.
+     * If the day does not exist in the target month, the last day of that month is used
+     * (e.g. March 31st - 1 month => February 28th).
      *
      * @param months the months to subtract
      * @returns an instance of the new date
      */
     public minusMonths(months: number): LocalDate {
-        return new LocalDate(this._year, this._month - months, this._dateOfMonth);
+        return this.atYearMonth(this._year, this._month - Math.trunc(months));
     }
 
     /**
      * Creates a copy of this instance and adds the given months.
+     * If the day does not exist in the target month, the last day of that month is used
+     * (e.g. January 31st + 1 month => February 28th).
      *
      * @param months the months to add
      * @returns an instance of the new date
      */
     public plusMonths(months: number): LocalDate {
-        return new LocalDate(this._year, this._month + months, this._dateOfMonth);
+        return this.atYearMonth(this._year, this._month + Math.trunc(months));
     }
 
     /**
      * Creates a copy of this instance and sets the month to the given month.
+     * If the day does not exist in the target month, the last day of that month is used.
      * Throws an error if no valid month was provided.
      *
      * @param month the month to set the date to
@@ -561,7 +618,7 @@ export class LocalDate {
             throw new Error('Invalid month');
         }
 
-        return new LocalDate(this._year, toJSMonth(month), this._dateOfMonth);
+        return this.atYearMonth(this._year, toJSMonth(month));
     }
 
     /**
@@ -592,11 +649,7 @@ export class LocalDate {
      * @returns an instance of the new date
      */
     public withDayOfMonth(day: number): LocalDate {
-        const lastOfMonth = new LocalDate(this._year, this._month, 1)
-            .plusMonths(1)
-            .minusDays(1);
-
-        if (day < 1 || day > lastOfMonth.getDate()) {
+        if (day < 1 || day > lengthOfMonth(this._year, this._month)) {
             throw new Error('Invalid day');
         }
 

@@ -42,7 +42,7 @@ export const LocalTimeSchema: LocalTimeSchemaConstructors = class LocalTimeSchem
     public constructor() {
         super({
             check: (v: unknown): v is NonNullable<T> => v instanceof LocalTime,
-            type: 'local-date'
+            type: 'local-time'
         });
 
         this.withMutation(self => {

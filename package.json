@@ -1,6 +1,6 @@
 {
   "name": "@rytrox/time",
-  "version": "2.0.6",
+  "version": "3.0.0",
   "description": "Useful Date and Time-Types for TypeScript",
   "repository": {
     "type": "git",
@@ -61,6 +61,7 @@
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.27",
+    "@types/node": "^26.6.6",
     "eslint": "^10.14.0",
     "jest": "^30.5.2",
     "ts-jest": "^29.4.15",

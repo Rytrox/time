@@ -2,10 +2,33 @@ import { isValidDate } from './local-date';
 
 const timeRegex = /^\d{2}:\d{2}(?<sms>(?<ms>:\d{2}\.\d{3})|(?<s>:\d{2}))?$/u;
 
-const isHours = (val: unknown): val is number => typeof val === 'number' && val >= 0 && val <= 23;
-const isMinutes = (val: unknown): val is number => typeof val === 'number' && val >= 0 && val <= 59;
-const isSeconds = (val: unknown): val is number => typeof val === 'number' && val >= 0 && val <= 59;
-const isMilliseconds = (val: unknown): val is number => typeof val === 'number' && val >= 0 && val <= 999;
+const isHours = (val: unknown): val is number => Number.isInteger(val) && typeof val === 'number' && val >= 0 && val <= 23;
+const isMinutes = (val: unknown): val is number => Number.isInteger(val) && typeof val === 'number' && val >= 0 && val <= 59;
+const isSeconds = (val: unknown): val is number => Number.isInteger(val) && typeof val === 'number' && val >= 0 && val <= 59;
+const isMilliseconds = (val: unknown): val is number => Number.isInteger(val) && typeof val === 'number' && val >= 0 && val <= 999;
+
+const MS_PER_SECOND = 1000;
+const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
+
+/**
+ * Converts the given time components into milliseconds since midnight.
+ * Overflows wrap around the day (e.g. 25:00 => 01:00, -1:00 => 23:00), fractions are truncated
+ * and NaN or infinite values result in NaN.
+ *
+ * This is pure arithmetic on purpose: it does not depend on the current date or on daylight-saving transitions.
+ */
+const toMillisOfDay = (hour: number, minute: number, second: number, millisecond: number): number => {
+    const total = (Math.trunc(hour) * MS_PER_HOUR) +
+        (Math.trunc(minute) * MS_PER_MINUTE) +
+        (Math.trunc(second) * MS_PER_SECOND) +
+        Math.trunc(millisecond);
+
+    return ((total % MS_PER_DAY) + MS_PER_DAY) % MS_PER_DAY;
+};
+
+const pad = (val: number, length = 2): string => val.toString().padStart(length, '0');
 
 /**
  * ISO-8601 string type representing a local time without a date component.
@@ -139,37 +162,30 @@ export class LocalTime {
         second?: number,
         millisecond?: number
     ) {
-        let time: Date | LocalTime;
+        let millisOfDay: number;
 
         if (isLocalTimeString(arg)) {
-            const [hh, mm, ss, ms] = arg.split(/[:.]/u).map(Number);
-            time = new Date();
+            const [hh, mm, ss = 0, ms = 0] = arg.split(/[:.]/u).map(Number);
 
-            time.setHours(
+            millisOfDay = toMillisOfDay(
                 isHours(hh) ? hh : Number.NaN,
                 isMinutes(mm) ? mm : Number.NaN,
-                0,
-                0
+                isSeconds(ss) ? ss : Number.NaN,
+                isMilliseconds(ms) ? ms : Number.NaN
             );
-
-            if (typeof ss === 'number') {
-                time.setSeconds(isSeconds(ss) ? ss : Number.NaN);
-            }
-
-            if (typeof ms === 'number') {
-                time.setMilliseconds(isMilliseconds(ms) ? ms : Number.NaN);
-            }
         } else if (typeof arg === 'number') {
-            time = new Date();
-            time.setHours(arg, minute ?? 0, second ?? 0, millisecond ?? 0);
+            millisOfDay = toMillisOfDay(arg, minute ?? 0, second ?? 0, millisecond ?? 0);
         } else {
-            time = arg instanceof Date || arg instanceof LocalTime ? arg : new Date();
+            // A Date (or the current time) is read in the local timezone, as documented
+            const time = arg instanceof Date || arg instanceof LocalTime ? arg : new Date();
+
+            millisOfDay = toMillisOfDay(time.getHours(), time.getMinutes(), time.getSeconds(), time.getMilliseconds());
         }
 
-        this.hours = time.getHours();
-        this.minutes = time.getMinutes();
-        this.seconds = time.getSeconds();
-        this.milliseconds = time.getMilliseconds();
+        this.hours = Math.floor(millisOfDay / MS_PER_HOUR);
+        this.minutes = Math.floor(millisOfDay / MS_PER_MINUTE) % 60;
+        this.seconds = Math.floor(millisOfDay / MS_PER_SECOND) % 60;
+        this.milliseconds = millisOfDay % MS_PER_SECOND;
     }
 
     /**
@@ -312,7 +328,7 @@ export class LocalTime {
     public isEqual(other: LocalTime | Date): boolean {
         const dateValid = other instanceof LocalTime ? other.valid : isValidDate(other);
 
-        return dateValid &&
+        return this.valid && dateValid &&
             this.hours === other.getHours() &&
             this.minutes === other.getMinutes() &&
             this.seconds === other.getSeconds() &&
@@ -329,10 +345,6 @@ export class LocalTime {
      */
     public isAfter(other: LocalTime | Date): boolean {
         const dateValid = other instanceof LocalTime ? other.valid : isValidDate(other);
-
-        if (!dateValid) {
-            return false;
-        }
 
         if (dateValid && this.valid) {
             if (this.hours > other.getHours()) {
@@ -387,7 +399,7 @@ export class LocalTime {
 
     /**
      * Creates a copy of this instance and subtracts the given number of hours.
-     * Note: The result is not clamped; values outside 0–23 may produce an invalid time.
+     * Overflows are handled automatically — e.g., subtracting 14 hours from 12:00 results in 22:00.
      *
      * @param hour the number of hours to subtract
      * @returns a new {@link LocalTime} instance with the updated hour
@@ -441,7 +453,7 @@ export class LocalTime {
      * @returns a new {@link LocalTime} instance with the updated seconds
      */
     public withSecond(seconds: number): LocalTime {
-        if (seconds < 0 || seconds > 59) {
+        if (!isSeconds(seconds)) {
             throw new Error('Invalid seconds');
         }
 
@@ -478,7 +490,7 @@ export class LocalTime {
      * @returns a new {@link LocalTime} instance with the updated milliseconds
      */
     public withMilli(milliseconds: number): LocalTime {
-        if (milliseconds < 0 || milliseconds > 999) {
+        if (!isMilliseconds(milliseconds)) {
             throw new Error('Invalid milliseconds');
         }
 
@@ -515,19 +527,9 @@ export class LocalTime {
      * @returns the time as an ISO-8601 string
      */
     public toISOString(): LocalTimeString {
-        let isoTimeString: string | undefined;
+        const isoTimeString = `${pad(this.hours)}:${pad(this.minutes)}:${pad(this.seconds)}.${pad(this.milliseconds, 3)}`;
 
-        try {
-            const date = new Date();
-            date.setUTCHours(this.hours, this.minutes, this.seconds, this.milliseconds);
-
-            const time = date.toISOString().split('T')[1];
-            isoTimeString = time?.slice(0, -1);
-        } catch (e) {
-            throw new Error('Invalid Time', { cause: e });
-        }
-
-        if (!isLocalTimeString(isoTimeString)) {
+        if (!this.valid || !isLocalTimeString(isoTimeString)) {
             throw new Error('Invalid Time');
         }
 
@@ -544,8 +546,8 @@ export class LocalTime {
      * @returns the locale-formatted time string
      */
     public toLocaleString(format?: Intl.LocalesArgument, options?: TimeFormatOptions): string {
-        const date = new Date();
-        date.setHours(this.hours, this.minutes, this.seconds, this.milliseconds);
+        // Format a fixed UTC date in UTC, so neither the current date nor daylight-saving can shift the time
+        const date = new Date(Date.UTC(1970, 0, 1, this.hours, this.minutes, this.seconds, this.milliseconds));
 
         const localeOptions = options ?? {
             hour: '2-digit',
@@ -553,7 +555,7 @@ export class LocalTime {
             second: '2-digit'
         };
 
-        return date.toLocaleString(format, localeOptions);
+        return date.toLocaleString(format, { ...localeOptions, timeZone: 'UTC' });
     }
 
     /**
@@ -563,9 +565,10 @@ export class LocalTime {
      * @returns the time as a string
      */
     public toString(): string {
-        const date = new Date();
-        date.setHours(this.hours, this.minutes, this.seconds, this.milliseconds);
+        if (!this.valid) {
+            return 'Invalid Date';
+        }
 
-        return date.toString().slice(16, 24);
+        return `${pad(this.hours)}:${pad(this.minutes)}:${pad(this.seconds)}`;
     }
 }

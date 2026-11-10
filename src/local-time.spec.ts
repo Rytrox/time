@@ -1,4 +1,5 @@
 import { LocalTime, type LocalTimeString } from './local-time';
+import { afterAll, beforeAll, jest } from '@jest/globals';
 import { Month } from './month';
 
 describe('LocalTime', () => {
@@ -458,5 +459,76 @@ describe('LocalTime', () => {
         const toString = time.toString();
 
         expect(toString).toBe('12:34:56');
+    });
+    it ('should display invalid times as Invalid Date', () => {
+        expect(new LocalTime(NaN).toString()).toBe('Invalid Date');
+        expect(new LocalTime(NaN).toLocaleString()).toBe('Invalid Date');
+    });
+
+    it ('should wrap overflows around the day', () => {
+        expect(new LocalTime(25, 0).toString()).toBe('01:00:00');
+        expect(new LocalTime(-1, 0).toString()).toBe('23:00:00');
+        expect(new LocalTime(23, 59, 59, 999).plusMillis(1).toString()).toBe('00:00:00');
+        expect(new LocalTime(0, 0).minusMinutes(1).toString()).toBe('23:59:00');
+    });
+
+    describe('on a daylight-saving transition day', () => {
+        /*
+         * Destructuring and Object.assign satisfy both noPropertyAccessFromIndexSignature (TS) and dot-notation (ESLint).
+         * If TZ is not set, the resolved system timezone is restored instead: Node only re-reads the timezone when TZ
+         * is assigned (deleting it keeps the last zone), and assigning undefined would set the string "undefined".
+         */
+        const { TZ: envTZ } = process.env;
+        const originalTZ = envTZ ?? new Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        beforeAll(() => {
+            Object.assign(process.env, { TZ: 'Europe/Berlin' });
+            // 2026-03-29: clocks jump from 02:00 to 03:00 in Europe/Berlin
+            jest.useFakeTimers({ now: new Date('2026-03-29T10:00:00Z') });
+        });
+
+        afterAll(() => {
+            jest.useRealTimers();
+            Object.assign(process.env, { TZ: originalTZ });
+        });
+
+        it ('should not shift times inside the skipped hour', () => {
+            const time = new LocalTime(2, 30);
+
+            expect(time.getHours()).toBe(2);
+            expect(time.getMinutes()).toBe(30);
+            expect(time.toString()).toBe('02:30:00');
+            expect(time.toISOString()).toBe('02:30:00.000');
+            expect(time.toLocaleString('de-DE')).toBe('02:30:00');
+        });
+
+        it ('should create and parse times inside the skipped hour', () => {
+            expect(() => LocalTime.of(2, 30)).not.toThrow();
+            expect(LocalTime.parse('02:30').getHours()).toBe(2);
+            expect(new LocalTime('02:30:15.250').toISOString()).toBe('02:30:15.250');
+        });
+
+        it ('should calculate across the skipped hour', () => {
+            expect(new LocalTime(1, 30).plusHours(1).toString()).toBe('02:30:00');
+            expect(new LocalTime(3, 30).minusHours(1).toString()).toBe('02:30:00');
+            expect(new LocalTime(1, 59).plusMinutes(1).getHours()).toBe(2);
+        });
+    });
+    it ('should reject invalid values in with-methods', () => {
+        const time = new LocalTime(12, 30, 15, 500);
+
+        for (const value of [Number.NaN, 1.5, -1, Number.POSITIVE_INFINITY]) {
+            expect(() => time.withHour(value)).toThrow();
+            expect(() => time.withMinute(value)).toThrow();
+            expect(() => time.withSecond(value)).toThrow();
+            expect(() => time.withMilli(value)).toThrow();
+        }
+
+        expect(time.withSecond(0).getSeconds()).toBe(0);
+        expect(time.withMilli(999).getMilliseconds()).toBe(999);
+    });
+
+    it ('should wrap around when subtracting hours', () => {
+        expect(new LocalTime(12, 0).minusHours(14).toString()).toBe('22:00:00');
     });
 });

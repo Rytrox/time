@@ -14,6 +14,7 @@ import {
 } from 'yup';
 import { LocalDate } from '../local-date';
 import { YearMonth } from '../year-month';
+import { isMonth } from '../month';
 
 export interface YearMonthSchema<T extends Maybe<YearMonth> = YearMonth | undefined, C extends AnyObject = AnyObject, D = undefined, F extends Flags = ''> extends Schema<T, C, D, F> {
     default<M extends Maybe<T>>(def: DefaultThunk<M, C>): YearMonthSchema<T, C, M, ToggleDefault<F, M>>;
@@ -51,11 +52,12 @@ export const YearMonthSchema: YearMonthSchemaConstructors = class <T extends May
                     return value;
                 }
 
-                if (typeof value === 'object' && value !== null) {
-                    if ('year' in value && typeof value.year === 'number' &&
-                        'month' in value && typeof value.month === 'number') {
-                        return new YearMonth(value.year, value.month);
-                    }
+                // Objects like { year: 2023, month: 12 } use a 1-based month, same as YearMonth#month and YearMonth.of.
+                // Invalid input is returned unchanged, so it fails the type check instead of being silently converted.
+                if (typeof value === 'object' && value !== null &&
+                    'year' in value && typeof value.year === 'number' && Number.isInteger(value.year) && value.year > 0 &&
+                    'month' in value && Number.isInteger(value.month) && isMonth(value.month)) {
+                    return YearMonth.of(value.year, value.month);
                 }
 
                 return value;

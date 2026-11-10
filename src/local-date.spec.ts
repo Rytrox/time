@@ -1,6 +1,6 @@
 import { JSMonth, Month, toMonth } from './month';
+import { LocalDate, isLocalDateString } from './local-date';
 import { DayOfWeek } from './day';
-import { LocalDate } from './local-date';
 import { LocalTime } from './local-time';
 
 describe('LocalDate', () => {
@@ -41,7 +41,8 @@ describe('LocalDate', () => {
     });
 
     it ('should create an instance from a date', () => {
-        const today = new LocalDate(new Date(Date.UTC(2023, 11, 25)));
+        // A Date is read in the local timezone, so the input must be created in local time as well
+        const today = new LocalDate(new Date(2023, 11, 25));
         expect(today).toBeTruthy();
 
         expect(today.getFullYear()).toBe(2023);
@@ -126,6 +127,25 @@ describe('LocalDate', () => {
     it ('should create invalid instance by ISO-8601', () => {
         const date = new LocalDate('2023-13-25');
         expect(date.valid).toBe(false);
+    });
+
+    it ('should create invalid instance for non-existing dates by ISO-8601', () => {
+        for (const iso of ['2023-02-29', '2023-02-31', '2023-04-31', '2024-02-30']) {
+            const date = new LocalDate(iso);
+
+            expect(date.valid).toBe(false);
+            expect(date.getFullYear()).toBeNaN();
+            expect(date.getMonth()).toBeNaN();
+            expect(date.getDate()).toBeNaN();
+            expect(() => date.toISOString()).toThrow();
+        }
+    });
+
+    it ('should accept leap days and month ends by ISO-8601', () => {
+        expect(new LocalDate('2024-02-29').toISOString()).toBe('2024-02-29');
+        expect(new LocalDate('2000-02-29').toISOString()).toBe('2000-02-29');
+        expect(new LocalDate('2023-04-30').toISOString()).toBe('2023-04-30');
+        expect(new LocalDate('2023-12-31').toISOString()).toBe('2023-12-31');
     });
 
     /**
@@ -264,6 +284,29 @@ describe('LocalDate', () => {
         const date = new LocalDate(2023, JSMonth.NOVEMBER, 25);
 
         expect(date.isAfter(new LocalDate(2023, JSMonth.NOVEMBER, 26))).toBe(false);
+    });
+
+    it ('should compare dates in January correctly', () => {
+        const early = new LocalDate(2023, JSMonth.JANUARY, 1);
+        const late = new LocalDate(2023, JSMonth.JANUARY, 5);
+
+        expect(early.isBefore(late)).toBe(true);
+        expect(late.isAfter(early)).toBe(true);
+        expect(late.isBefore(early)).toBe(false);
+        expect(early.isAfter(late)).toBe(false);
+
+        expect(early.isBefore(new Date(2023, JSMonth.JANUARY, 5))).toBe(true);
+        expect(late.isAfter(new Date(2023, JSMonth.JANUARY, 1))).toBe(true);
+    });
+
+    it ('should compare dates across January and February correctly', () => {
+        const january = new LocalDate(2023, JSMonth.JANUARY, 31);
+        const february = new LocalDate(2023, JSMonth.FEBRUARY, 1);
+
+        expect(january.isBefore(february)).toBe(true);
+        expect(february.isAfter(january)).toBe(true);
+        expect(february.isBefore(january)).toBe(false);
+        expect(january.isAfter(february)).toBe(false);
     });
 
     it ('should get valid ISO-String', () => {
@@ -544,5 +587,72 @@ describe('LocalDate', () => {
     it ('should throw error when using invalid day of month', () => {
         expect(() => new LocalDate(2023, JSMonth.NOVEMBER, 31).withDayOfMonth(32)).toThrow();
         expect(() => new LocalDate(2023, JSMonth.NOVEMBER, 30).withDayOfMonth(0)).toThrow();
+    });
+    it ('should keep years between 0 and 99', () => {
+        const date = LocalDate.of(50, Month.MARCH, 15);
+
+        expect(date.getFullYear()).toBe(50);
+        expect(date.toISOString()).toBe('0050-03-15');
+        expect(date.atStartOfDay().getFullYear()).toBe(50);
+        expect(date.atTime(12, 30).getFullYear()).toBe(50);
+        expect(new LocalDate(50, JSMonth.MARCH, 15).getFullYear()).toBe(50);
+        expect(new LocalDate('0050-03-15').toISOString()).toBe('0050-03-15');
+        expect(LocalDate.parse('0050-03-15').getFullYear()).toBe(50);
+    });
+
+    it ('should accept ISO strings with years between 1 and 99', () => {
+        expect(isLocalDateString('0001-01-01')).toBe(true);
+        expect(isLocalDateString('0050-02-28')).toBe(true);
+        expect(isLocalDateString('0050-02-29')).toBe(false);
+    });
+
+    it ('should not jump into the 20th century when calculating around year 100', () => {
+        expect(new LocalDate(100, JSMonth.JANUARY, 1).minusDays(1).toISOString()).toBe('0099-12-31');
+        expect(new LocalDate(99, JSMonth.DECEMBER, 31).plusDays(1).toISOString()).toBe('0100-01-01');
+        expect(LocalDate.of(99, Month.JANUARY, 31).plusYears(1).getFullYear()).toBe(100);
+    });
+
+    it ('should resolve overflows in atTime', () => {
+        const date = new LocalDate(2023, JSMonth.DECEMBER, 31).atTime(25, 0);
+
+        expect(date.getFullYear()).toBe(2024);
+        expect(date.getMonth()).toBe(JSMonth.JANUARY);
+        expect(date.getDate()).toBe(1);
+        expect(date.getHours()).toBe(1);
+    });
+    it ('should clamp the day to the end of the month when changing months', () => {
+        const january31 = LocalDate.of(2023, Month.JANUARY, 31);
+
+        expect(january31.plusMonths(1).toISOString()).toBe('2023-02-28');
+        expect(january31.plusMonths(3).toISOString()).toBe('2023-04-30');
+        expect(january31.withMonth(Month.FEBRUARY).toISOString()).toBe('2023-02-28');
+        expect(LocalDate.of(2024, Month.JANUARY, 31).plusMonths(1).toISOString()).toBe('2024-02-29');
+        expect(LocalDate.of(2023, Month.MARCH, 31).minusMonths(1).toISOString()).toBe('2023-02-28');
+        expect(LocalDate.of(2023, Month.DECEMBER, 31).plusMonths(2).toISOString()).toBe('2024-02-29');
+        expect(LocalDate.of(2023, Month.MAY, 31).minusMonths(15).toISOString()).toBe('2022-02-28');
+    });
+
+    it ('should keep the day of month if it exists in the target month', () => {
+        expect(LocalDate.of(2023, Month.JANUARY, 28).plusMonths(1).toISOString()).toBe('2023-02-28');
+        expect(LocalDate.of(2023, Month.JANUARY, 15).plusMonths(13).toISOString()).toBe('2024-02-15');
+        expect(LocalDate.of(2023, Month.FEBRUARY, 28).plusMonths(1).toISOString()).toBe('2023-03-28');
+    });
+
+    it ('should clamp February 29th when changing years', () => {
+        const leapDay = LocalDate.of(2024, Month.FEBRUARY, 29);
+
+        expect(leapDay.plusYears(1).toISOString()).toBe('2025-02-28');
+        expect(leapDay.minusYears(1).toISOString()).toBe('2023-02-28');
+        expect(leapDay.withYear(2023).toISOString()).toBe('2023-02-28');
+        expect(leapDay.plusYears(4).toISOString()).toBe('2028-02-29');
+    });
+
+    it ('should stay invalid when changing months or years of an invalid date', () => {
+        const invalid = new LocalDate(NaN);
+
+        expect(invalid.plusMonths(1).valid).toBe(false);
+        expect(invalid.minusYears(1).valid).toBe(false);
+        expect(invalid.withMonth(Month.MARCH).valid).toBe(false);
+        expect(LocalDate.of(2023, Month.JANUARY, 1).plusMonths(NaN).valid).toBe(false);
     });
 });
